@@ -141,4 +141,42 @@ const getTokenBalance = async (req, res) => {
   }
 };
 
-module.exports = { getNFTMetaData, getTransactions, getTokenBalance };
+const fetchTransactionsByDate = async (req, res) => {
+  const { address, startDate, endDate } = req.query;
+
+  if (!address) {
+    return res
+      .status(500)
+      .json(formatResponse(false, error.message || "Address is required"));
+  }
+
+  try {
+    const query = { address };
+
+    if (startDate || endDate) {
+      query.timeStamp = {};
+      if (startDate) query.timeStamp.$gte = new Date(startDate);
+      if (endDate) {
+        const adjustedEndDate = new Date(endDate);
+        adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+        query.timeStamp.$lte = adjustedEndDate;
+      }
+    }
+    const transactions = await Txns.find(query);
+    res.status(200).json(formatResponse(true, "Success!", transactions));
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json(
+        formatResponse(false, error.message || "Failed to fetch transactions")
+      );
+  }
+};
+
+module.exports = {
+  getNFTMetaData,
+  getTransactions,
+  getTokenBalance,
+  fetchTransactionsByDate,
+};
